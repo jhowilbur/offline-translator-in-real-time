@@ -63,11 +63,12 @@ async def run_bot(pipecat_transport: BaseTransport):
 
     pipeline = Pipeline(
         [
-            pipecat_transport.input(),
-            context_aggregator.user(), # User responses
+            pipecat_transport.input(),  # Transport user input
             rtvi,  # RTVI processor
             stt,
-            llm,
+            context_aggregator.user(),  # User responses
+            llm,  # LLM
+            # tts,  # TTS
             pipecat_transport.output(),  # Transport bot output
             context_aggregator.assistant(),  # Assistant spoken responses
         ]
@@ -108,6 +109,7 @@ async def start_bot(webrtc_connection):
             audio_in_enabled=True,
             audio_out_enabled=True,
             vad_analyzer=SileroVADAnalyzer(),
+            enable_transcription=True,
         ),
     )
 

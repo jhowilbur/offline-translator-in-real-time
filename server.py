@@ -12,6 +12,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from pipecat.transports.network.webrtc_connection import IceServer, SmallWebRTCConnection
+from pipecat.runner.types import SmallWebRTCRunnerArguments
 
 app = FastAPI()
 
@@ -35,7 +36,11 @@ async def offer(request: dict, background_tasks: BackgroundTasks):
     if pc_id and pc_id in pcs_map:
         pipecat_connection = pcs_map[pc_id]
         logger.info(f"Reusing existing connection for pc_id: {pc_id}")
-        await pipecat_connection.renegotiate(sdp=request["sdp"], type=request["type"])
+        await pipecat_connection.renegotiate(
+                sdp=request["sdp"],
+                type=request["type"],
+                restart_pc=request.get("restart_pc", False),
+        )
     else:
         pipecat_connection = SmallWebRTCConnection(ice_servers)
         await pipecat_connection.initialize(sdp=request["sdp"], type=request["type"])
@@ -46,6 +51,8 @@ async def offer(request: dict, background_tasks: BackgroundTasks):
             pcs_map.pop(webrtc_connection.pc_id, None)
 
         background_tasks.add_task(start_bot, pipecat_connection)
+        # runner_args = SmallWebRTCRunnerArguments(webrtc_connection=pipecat_connection)
+        # background_tasks.add_task(start_bot, runner_args)
 
     answer = pipecat_connection.get_answer()
     # Updating the peer connection inside the map
@@ -73,7 +80,7 @@ if __name__ == "__main__":
         "--host", default="0.0.0.0", help="Host for HTTP server (default: 0.0.0.0)"
     )
     parser.add_argument(
-        "--port", type=int, default=8080, help="Port for HTTP server (default: 8080)"
+        "--port", type=int, default=7860, help="Port for HTTP server (default: 7860)"
     )
     parser.add_argument("--verbose", "-v", action="count")
     args = parser.parse_args()

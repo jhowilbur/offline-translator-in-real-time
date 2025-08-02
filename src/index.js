@@ -183,26 +183,188 @@ const hideListening = () => {
     }
 }
 
-// INTEGRATION GUIDE:
-// ==================
-// To integrate with your voice processing system:
-//
-// 1. When speech detection starts:
-//    showListening()
-//
-// 2. When user finishes speaking:
-//    hideListening()
-//    conversation.addUserMessage(transcribedText)
-//
-// 3. When AI starts processing:
-//    conversation.showProcessing()
-//
-// 4. When AI response is ready:
-//    conversation.hideProcessing()
-//    conversation.addAIMessage(responseText)
-//
-// 5. Clear conversation:
-//    conversation.clear()
+// Real-time Pipecat Integration with RTVI Events
+let dataChannel = null
+
+const setupRTVIDataChannel = () => {
+    if (!peerConnection) return
+    
+    // Try to listen for Pipecat's data channel (optional)
+    peerConnection.addEventListener('datachannel', (event) => {
+        dataChannel = event.channel
+        console.log('Pipecat data channel received:', dataChannel.label)
+        
+        dataChannel.addEventListener('message', handleRTVIMessage)
+        dataChannel.addEventListener('open', () => {
+            console.log('Pipecat data channel ready')
+        })
+        dataChannel.addEventListener('close', () => {
+            console.log('Pipecat data channel closed')
+            dataChannel = null
+        })
+    })
+    
+    // Primary: Audio-based event detection
+    setupAudioEventFallback()
+}
+
+const handleRTVIMessage = (event) => {
+    try {
+        const data = JSON.parse(event.data)
+        console.log('RTVI Event:', data)
+        
+        // Handle different RTVI event formats
+        const eventType = data.type || data.event_type || data.action
+        const eventData = data.data || data.payload || data
+        
+        switch (eventType) {
+            case 'user-started-speaking':
+            case 'user_started_speaking':
+            case 'speech-started':
+                showListening()
+                break
+                
+            case 'user-stopped-speaking':
+            case 'user_stopped_speaking':
+            case 'speech-stopped':
+                hideListening()
+                break
+                
+            case 'user-transcription':
+            case 'user_transcription':
+            case 'transcription':
+                if (eventData && eventData.text && (eventData.final || eventData.is_final)) {
+                    conversation.addUserMessage(eventData.text)
+                }
+                break
+                
+            case 'bot-llm-started':
+            case 'bot_llm_started':
+            case 'llm-started':
+            case 'ai-thinking':
+                conversation.showProcessing()
+                break
+                
+            case 'bot-llm-stopped':
+            case 'bot_llm_stopped':
+            case 'llm-stopped':
+                conversation.hideProcessing()
+                break
+                
+            case 'bot-llm-text':
+            case 'bot_llm_text':
+            case 'llm-text':
+            case 'ai-response':
+                if (eventData && eventData.text) {
+                    conversation.hideProcessing()
+                    conversation.addAIMessage(eventData.text)
+                }
+                break
+                
+            case 'bot-tts-started':
+            case 'bot_tts_started':
+            case 'tts-started':
+                // Bot is speaking
+                break
+                
+            case 'bot-tts-stopped':
+            case 'bot_tts_stopped':
+            case 'tts-stopped':
+                // Bot finished speaking
+                break
+                
+            default:
+                console.log('Unhandled RTVI event:', eventType, data)
+        }
+    } catch (error) {
+        // Try to handle non-JSON messages
+        console.log('Received non-JSON message:', event.data)
+    }
+}
+
+// Audio-based event detection fallback
+let isCurrentlyListening = false
+let audioAnalyzer = null
+let audioTimeout = null
+
+const setupAudioEventFallback = () => {
+    // Monitor user audio input for speech detection
+    if (audioStream && audioStream.getAudioTracks().length > 0) {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+            const source = audioContext.createMediaStreamSource(audioStream)
+            audioAnalyzer = audioContext.createAnalyser()
+            audioAnalyzer.fftSize = 256
+            source.connect(audioAnalyzer)
+            
+            monitorAudioActivity()
+        } catch (error) {
+            console.log('Could not setup audio analyzer:', error)
+        }
+    }
+    
+    // Monitor bot audio output
+    const monitorBotAudio = () => {
+        if (!audioEl.srcObject) {
+            setTimeout(monitorBotAudio, 100)
+            return
+        }
+        
+        audioEl.addEventListener('playing', () => {
+            console.log('Bot started speaking')
+        })
+        
+        audioEl.addEventListener('ended', () => {
+            console.log('Bot finished speaking')
+        })
+        
+        audioEl.addEventListener('pause', () => {
+            console.log('Bot audio paused')
+        })
+    }
+    
+    monitorBotAudio()
+}
+
+const monitorAudioActivity = () => {
+    if (!audioAnalyzer) return
+    
+    const bufferLength = audioAnalyzer.frequencyBinCount
+    const dataArray = new Uint8Array(bufferLength)
+    
+    const checkAudio = () => {
+        audioAnalyzer.getByteFrequencyData(dataArray)
+        
+        // Calculate average volume
+        let sum = 0
+        for (let i = 0; i < bufferLength; i++) {
+            sum += dataArray[i]
+        }
+        const average = sum / bufferLength
+        
+        // Detect speech activity (threshold can be adjusted)
+        const isActive = average > 10
+        
+        if (isActive && !isCurrentlyListening) {
+            isCurrentlyListening = true
+            showListening()
+            console.log('Audio activity detected - user started speaking')
+        } else if (!isActive && isCurrentlyListening) {
+            // Add delay before stopping listening indicator
+            clearTimeout(audioTimeout)
+            audioTimeout = setTimeout(() => {
+                isCurrentlyListening = false
+                hideListening()
+                console.log('Audio activity stopped - user stopped speaking')
+            }, 1000) // 1 second delay
+        }
+        
+        // Continue monitoring
+        requestAnimationFrame(checkAudio)
+    }
+    
+    checkAudio()
+}
 
 // Export for easy integration
 window.conversation = conversation
@@ -223,24 +385,8 @@ const _onConnected = () => {
     buttonEl.textContent = "Disconnect"
     connected = true
     
-    // Demo: Show how the conversation system works
-    setTimeout(() => {
-        conversation.addAIMessage("Hello! I'm ready to help translate and interpret idioms.")
-    }, 500)
-    
-    // Demo: Simulate a conversation flow (remove this in production)
-    setTimeout(() => {
-        showListening()
-        setTimeout(() => {
-            hideListening()
-            conversation.addUserMessage("What does 'break a leg' mean?")
-            conversation.showProcessing()
-            setTimeout(() => {
-                conversation.hideProcessing()
-                conversation.addAIMessage("'Break a leg' is an idiom that means 'good luck!' It's commonly used to wish someone success, especially before a performance or important event.")
-            }, 2000)
-        }, 3000)
-    }, 2000)
+    // Setup RTVI data channel for conversation events
+    setupRTVIDataChannel()
 }
 
 const _onDisconnected = () => {
@@ -271,6 +417,20 @@ const disconnect = () => {
     
     // Stop any listening indicators
     hideListening()
+    
+    // Clean up audio monitoring
+    if (audioTimeout) {
+        clearTimeout(audioTimeout)
+        audioTimeout = null
+    }
+    isCurrentlyListening = false
+    audioAnalyzer = null
+    
+    // Close data channel
+    if (dataChannel) {
+        dataChannel.close()
+        dataChannel = null
+    }
     
     // Close peer connection
     if (peerConnection) {
