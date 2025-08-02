@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Dict
 
 import uvicorn
-from bot import run_bot
+from bot import start_bot
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.responses import FileResponse
@@ -45,7 +45,7 @@ async def offer(request: dict, background_tasks: BackgroundTasks):
             logger.info(f"Discarding peer connection for pc_id: {webrtc_connection.pc_id}")
             pcs_map.pop(webrtc_connection.pc_id, None)
 
-        background_tasks.add_task(run_bot, pipecat_connection)
+        background_tasks.add_task(start_bot, pipecat_connection)
 
     answer = pipecat_connection.get_answer()
     # Updating the peer connection inside the map

@@ -14,6 +14,8 @@ from pipecat.services.ollama import OLLamaLLMService
 from pipecat.transcriptions.language import Language
 from pipecat.services.whisper.stt import WhisperSTTService, Model
 from pipecat.processors.frameworks.rtvi import RTVIConfig, RTVIObserver, RTVIProcessor
+from pipecat.runner.types import RunnerArguments
+from pipecat.transports.base_transport import BaseTransport, TransportParams
 
 
 load_dotenv(override=True)
@@ -28,17 +30,7 @@ Your job is to translate idioms and figurative expressions into {languageToTrans
 Always give the translation directly, without extra explanation or commentary.
 """
 
-async def run_bot(webrtc_connection):
-
-    pipecat_transport = SmallWebRTCTransport(
-        webrtc_connection=webrtc_connection,
-        params=TransportParams(
-            audio_in_enabled=True,
-            audio_out_enabled=True,
-            vad_analyzer=SileroVADAnalyzer(),
-            audio_out_10ms_chunks=2,
-        ),
-    )
+async def run_bot(pipecat_transport: BaseTransport):
 
     stt = WhisperSTTService(
         model=Model.LARGE_V3_TURBO,
@@ -105,3 +97,18 @@ async def run_bot(webrtc_connection):
     runner = PipelineRunner(handle_sigint=False)
 
     await runner.run(task)
+
+
+async def start_bot(webrtc_connection):
+    """Main bot entry point for the bot starter."""
+
+    transport = SmallWebRTCTransport(
+        webrtc_connection=webrtc_connection,
+        params=TransportParams(
+            audio_in_enabled=True,
+            audio_out_enabled=True,
+            vad_analyzer=SileroVADAnalyzer(),
+        ),
+    )
+
+    await run_bot(transport)
