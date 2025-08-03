@@ -18,9 +18,12 @@ class WebRTCApp {
 
   private declare audioElement: HTMLAudioElement;
 
+  private transcriptLog: HTMLElement | null = null;
   private debugLog: HTMLElement | null = null;
+  private debugToggle: HTMLButtonElement | null = null;
   private statusSpan: HTMLElement | null = null;
   private statusIndicator: HTMLElement | null = null;
+  private isDebugMode: boolean = false;
 
   private declare smallWebRTCTransport: SmallWebRTCTransport;
   private declare pcClient: PipecatClient;
@@ -95,7 +98,9 @@ class WebRTCApp {
     this.audioInput = document.getElementById('audio-input') as HTMLSelectElement;
     this.audioCodec = document.getElementById('audio-codec') as HTMLSelectElement;
     this.audioElement = document.getElementById('bot-audio') as HTMLAudioElement;
+    this.transcriptLog = document.getElementById('transcript-log');
     this.debugLog = document.getElementById('debug-log');
+    this.debugToggle = document.getElementById('debug-toggle') as HTMLButtonElement;
     this.statusSpan = document.getElementById('connection-status');
     this.statusIndicator = document.querySelector('.status-indicator');
   }
@@ -114,21 +119,48 @@ class WebRTCApp {
       this.muteBtn.textContent = isMicEnabled ? '🔇' : '🎤';
       this.muteBtn.classList.toggle('muted', isMicEnabled);
     });
+    
+    this.debugToggle?.addEventListener('click', () => {
+      this.toggleDebugMode();
+    });
   }
 
-  private log(message: string): void {
+  private toggleDebugMode(): void {
+    this.isDebugMode = !this.isDebugMode;
+    
+    if (this.debugLog) {
+      this.debugLog.classList.toggle('hidden', !this.isDebugMode);
+    }
+    
+    if (this.debugToggle) {
+      this.debugToggle.classList.toggle('active', this.isDebugMode);
+      this.debugToggle.textContent = this.isDebugMode ? 'Hide Debug' : 'Debug';
+    }
+  }
+
+  private logTranscript(message: string, isUser: boolean): void {
+    if (!this.transcriptLog) return;
+    
+    const entry = document.createElement('div');
+    
+    if (isUser) {
+      entry.innerHTML = `<strong style="color: #667eea;">You:</strong> ${message}`;
+    } else {
+      entry.innerHTML = `<strong style="color: #2ed573;">Translation:</strong> ${message}`;
+    }
+    
+    this.transcriptLog.appendChild(entry);
+    this.transcriptLog.scrollTop = this.transcriptLog.scrollHeight;
+  }
+
+  private logDebug(message: string): void {
     if (!this.debugLog) return;
+    
     const entry = document.createElement('div');
     const timestamp = new Date().toLocaleTimeString();
     entry.textContent = `${timestamp} - ${message}`;
     
-    if (message.includes('User transcript:')) {
-      entry.style.color = '#667eea';
-      entry.style.fontWeight = '500';
-    } else if (message.includes('AI transcript:')) {
-      entry.style.color = '#2ed573';
-      entry.style.fontWeight = '500';
-    } else if (message.includes('started speaking')) {
+    if (message.includes('started speaking')) {
       entry.style.color = '#ff9f43';
     } else if (message.includes('Status:')) {
       entry.style.color = '#333';
@@ -139,8 +171,25 @@ class WebRTCApp {
     this.debugLog.scrollTop = this.debugLog.scrollHeight;
   }
 
+  private log(message: string): void {
+    // ALWAYS log to debug (everything goes there)
+    this.logDebug(message);
+    
+    // ALSO log transcripts to clean view
+    if (message.includes('User transcript:')) {
+      const text = message.replace('User transcript: ', '');
+      this.logTranscript(text, true);
+    }
+    
+    if (message.includes('AI transcript:')) {
+      const text = message.replace('AI transcript: ', '');
+      this.logTranscript(text, false);
+    }
+  }
+
   private clearAllLogs() {
-    this.debugLog!.innerText = '';
+    if (this.transcriptLog) this.transcriptLog.innerText = '';
+    if (this.debugLog) this.debugLog.innerText = '';
   }
 
   private updateStatus(status: string): void {

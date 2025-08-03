@@ -39,9 +39,13 @@
             <div class="transcript-card">
                 <div class="transcript-header">
                     <h2>Conversation</h2>
-                    <div class="clear-btn" onclick="document.getElementById('debug-log').innerHTML = ''">Clear</div>
+                    <div class="header-controls">
+                        <button id="debug-toggle" class="debug-btn">Debug</button>
+                        <div class="clear-btn" onclick="document.getElementById('transcript-log').innerHTML = ''; document.getElementById('debug-log').innerHTML = ''">Clear</div>
+                    </div>
                 </div>
-                <div id="debug-log" class="transcript-content"></div>
+                <div id="transcript-log" class="transcript-content"></div>
+                <div id="debug-log" class="debug-content hidden"></div>
             </div>
         </main>
 
