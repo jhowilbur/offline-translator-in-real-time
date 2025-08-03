@@ -67,6 +67,63 @@ body {
     overflow: hidden;
 }
 
+.language-settings {
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.language-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.language-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.language-select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 15px;
+    background: white;
+    transition: all 0.2s ease;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    cursor: pointer;
+}
+
+.language-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.language-select:hover {
+    border-color: #9ca3af;
+}
+
+.language-select.required {
+    border-color: #f59e0b;
+}
+
+.language-select.required:focus {
+    border-color: #d97706;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
 .audio-settings {
     display: flex;
     flex-wrap: wrap;
@@ -356,5 +413,20 @@ body {
     
     .transcript-card {
         min-height: 500px;
+    }
+    
+    .language-settings {
+        flex-direction: row;
+        gap: 20px;
+    }
+    
+    .language-group {
+        flex: 1;
+    }
+}
+
+@media (max-width: 767px) {
+    .language-select {
+        font-size: 16px; /* Prevents zoom on iOS */
     }
 }

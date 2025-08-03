@@ -13,6 +13,7 @@ class WebRTCApp {
   private declare disconnectBtn: HTMLButtonElement;
   private declare muteBtn: HTMLButtonElement;
 
+  private declare sourceLanguageSelect: HTMLSelectElement;
   private declare languageSelect: HTMLSelectElement;
   private declare audioInput: HTMLSelectElement;
   private declare audioCodec: HTMLSelectElement;
@@ -38,11 +39,15 @@ class WebRTCApp {
   }
 
   private initializePipecatClient(): void {
-    this.initializePipecatClientWithLanguage();
+    this.initializePipecatClientWithLanguage(undefined, undefined);
   }
 
-  private initializePipecatClientWithLanguage(language?: string): void {
-    const connectionUrl = language ? `/api/offer?language=${language}` : '/api/offer';
+  private initializePipecatClientWithLanguage(targetLanguage?: string, sourceLanguage?: string): void {
+    let connectionUrl = '/api/offer';
+    const params = new URLSearchParams();
+    if (targetLanguage) params.append('language', targetLanguage);
+    if (sourceLanguage) params.append('sourceLanguage', sourceLanguage);
+    if (params.toString()) connectionUrl += `?${params.toString()}`;
     const opts: PipecatClientOptions = {
       transport: new SmallWebRTCTransport({ connectionUrl }),
       enableMic: true,
@@ -102,6 +107,7 @@ class WebRTCApp {
     this.connectBtn = document.getElementById('connect-btn') as HTMLButtonElement;
     this.disconnectBtn = document.getElementById('disconnect-btn') as HTMLButtonElement;
     this.muteBtn = document.getElementById('mute-btn') as HTMLButtonElement;
+    this.sourceLanguageSelect = document.getElementById('source-language-select') as HTMLSelectElement;
     this.languageSelect = document.getElementById('language-select') as HTMLSelectElement;
     this.audioInput = document.getElementById('audio-input') as HTMLSelectElement;
     this.audioCodec = document.getElementById('audio-codec') as HTMLSelectElement;
@@ -127,6 +133,15 @@ class WebRTCApp {
       this.pcClient.enableMic(!isMicEnabled);
       this.muteBtn.textContent = isMicEnabled ? '🔇' : '🎤';
       this.muteBtn.classList.toggle('muted', isMicEnabled);
+    });
+    
+    // Remove required styling when target language is selected
+    this.languageSelect.addEventListener('change', () => {
+      if (this.languageSelect.value) {
+        this.languageSelect.classList.remove('required');
+      } else {
+        this.languageSelect.classList.add('required');
+      }
     });
     
     this.debugToggle?.addEventListener('click', () => {
@@ -272,8 +287,10 @@ class WebRTCApp {
   }
 
   private async start(): Promise<void> {
-    const selectedLanguage = this.languageSelect.value;
-    if (!selectedLanguage) {
+    const selectedTargetLanguage = this.languageSelect.value;
+    const selectedSourceLanguage = this.sourceLanguageSelect.value;
+    
+    if (!selectedTargetLanguage) {
       alert('Please select a target language before connecting.');
       this.connectBtn.disabled = false;
       return;
@@ -283,8 +300,8 @@ class WebRTCApp {
     this.connectBtn.disabled = true;
     this.updateStatus('Connecting');
 
-    // Reinitialize client with language parameter
-    this.initializePipecatClientWithLanguage(selectedLanguage);
+    // Reinitialize client with language parameters
+    this.initializePipecatClientWithLanguage(selectedTargetLanguage, selectedSourceLanguage);
     this.smallWebRTCTransport.setAudioCodec(this.audioCodec.value);
     
     try {

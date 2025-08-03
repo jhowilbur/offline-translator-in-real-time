@@ -16,20 +16,29 @@ from pipecat.transports.base_transport import BaseTransport, TransportParams
 
 load_dotenv(override=True)
 
-async def run_bot(pipecat_transport: BaseTransport, language_code: str = 'FR_FR'):
-    # Convert string to Language enum
+async def run_bot(pipecat_transport: BaseTransport, target_language_code: str = 'FR_FR', source_language_code: str = None):
+    # Convert string to Language enum for target language
     try:
-        languageToTranslate = getattr(Language, language_code)
+        languageToTranslate = getattr(Language, target_language_code)
     except AttributeError:
         languageToTranslate = Language.FR_FR  # fallback
 
-    stt = WhisperSTTService(
-        model=Model.LARGE_V3_TURBO,
-        device="cuda",
-        compute_type="float16",  # Reduce memory usage
-        no_speech_prob=0.3,      # Lower threshold for speech detection
-        language=Language.PT_BR     # Specify language for better performance,
-    )
+    # Configure STT with source language if provided
+    stt_params = {
+        "model": Model.LARGE_V3_TURBO,
+        "device": "cuda",
+        "compute_type": "float16",  # Reduce memory usage
+        "no_speech_prob": 0.3,      # Lower threshold for speech detection
+    }
+    
+    if source_language_code:
+        try:
+            source_language = getattr(Language, source_language_code)
+            stt_params["language"] = source_language
+        except AttributeError:
+            pass  # Use auto-detection if invalid language
+    
+    stt = WhisperSTTService(**stt_params)
 
     llm = OLLamaLLMService(
         model="gemma3n:e2b",
@@ -91,7 +100,7 @@ async def run_bot(pipecat_transport: BaseTransport, language_code: str = 'FR_FR'
     await runner.run(task)
 
 
-async def start_bot(webrtc_connection, language_code: str = 'FR_FR'):
+async def start_bot(webrtc_connection, target_language_code: str = 'FR_FR', source_language_code: str = None):
     """Main bot entry point for the bot starter."""
 
     transport = SmallWebRTCTransport(
@@ -104,4 +113,4 @@ async def start_bot(webrtc_connection, language_code: str = 'FR_FR'):
         ),
     )
 
-    await run_bot(transport, language_code)
+    await run_bot(transport, target_language_code, source_language_code)

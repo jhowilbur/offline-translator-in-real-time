@@ -17,20 +17,43 @@
 
         <main class="main">
             <div class="controls-card">
+                <div class="language-settings">
+                    <div class="language-group">
+                        <label class="language-label">🗣️ I speak</label>
+                        <select id="source-language-select" class="language-select">
+                            <option value="" selected>Auto-detect</option>
+                            <option value="EN_US">🇺🇸 English</option>
+                            <option value="ES_ES">🇪🇸 Spanish</option>
+                            <option value="FR_FR">🇫🇷 French</option>
+                            <option value="DE_DE">🇩🇪 German</option>
+                            <option value="IT_IT">🇮🇹 Italian</option>
+                            <option value="PT_PT">🇵🇹 Portuguese</option>
+                            <option value="JA_JP">🇯🇵 Japanese</option>
+                            <option value="KO_KR">🇰🇷 Korean</option>
+                            <option value="ZH_CN">🇨🇳 Chinese</option>
+                            <option value="RU_RU">🇷🇺 Russian</option>
+                            <option value="AR_AR">🇸🇦 Arabic</option>
+                        </select>
+                    </div>
+                    <div class="language-group">
+                        <label class="language-label">🎯 Translate to</label>
+                        <select id="language-select" class="language-select required">
+                            <option value="" selected>Choose language</option>
+                            <option value="ES_ES">🇪🇸 Spanish</option>
+                            <option value="FR_FR">🇫🇷 French</option>
+                            <option value="DE_DE">🇩🇪 German</option>
+                            <option value="IT_IT">🇮🇹 Italian</option>
+                            <option value="PT_PT">🇵🇹 Portuguese</option>
+                            <option value="JA_JP">🇯🇵 Japanese</option>
+                            <option value="KO_KR">🇰🇷 Korean</option>
+                            <option value="ZH_CN">🇨🇳 Chinese</option>
+                            <option value="RU_RU">🇷🇺 Russian</option>
+                            <option value="AR_AR">🇸🇦 Arabic</option>
+                        </select>
+                    </div>
+                </div>
+                
                 <div class="audio-settings">
-                    <select id="language-select" class="select">
-                        <option value="" selected>Select target language</option>
-                        <option value="ES_ES">Spanish</option>
-                        <option value="FR_FR">French</option>
-                        <option value="DE_DE">German</option>
-                        <option value="IT_IT">Italian</option>
-                        <option value="PT_PT">Portuguese</option>
-                        <option value="JA_JP">Japanese</option>
-                        <option value="KO_KR">Korean</option>
-                        <option value="ZH_CN">Chinese</option>
-                        <option value="RU_RU">Russian</option>
-                        <option value="AR_AR">Arabic</option>
-                    </select>
                     <select id="audio-input" class="select">
                         <option value="" selected>Default microphone</option>
                     </select>

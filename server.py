@@ -44,8 +44,9 @@ async def offer(request: dict, background_tasks: BackgroundTasks, req: Request):
             logger.info(f"Discarding peer connection for pc_id: {webrtc_connection.pc_id}")
             pcs_map.pop(webrtc_connection.pc_id, None)
 
-        language = req.query_params.get('language', 'FR_FR')
-        background_tasks.add_task(start_bot, pipecat_connection, language)
+        target_language = req.query_params.get('language', 'FR_FR')
+        source_language = req.query_params.get('sourceLanguage', None)
+        background_tasks.add_task(start_bot, pipecat_connection, target_language, source_language)
         # runner_args = SmallWebRTCRunnerArguments(webrtc_connection=pipecat_connection)
         # background_tasks.add_task(start_bot, runner_args)
 
