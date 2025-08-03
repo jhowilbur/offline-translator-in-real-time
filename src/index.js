@@ -4,93 +4,95 @@ const audioEl = document.getElementById("audio-el")
 const conversationEl = document.getElementById("conversation")
 
 let connected = false
-let peerConnection = null
-let audioStream = null
+let pcClient = null
 
-const waitForIceGatheringComplete = async (pc, timeoutMs = 2000) => {
-    if (pc.iceGatheringState === 'complete') return;
-    console.log("Waiting for ICE gathering to complete. Current state:", pc.iceGatheringState);
-    return new Promise((resolve) => {
-        let timeoutId;
-        const checkState = () => {
-            console.log("icegatheringstatechange:", pc.iceGatheringState);
-            if (pc.iceGatheringState === 'complete') {
-                cleanup();
-                resolve();
+// Initialize Pipecat Client - now much simpler with local files
+const initializePipecatClient = () => {
+    console.log('Initializing Pipecat client...')
+    
+    try {
+        const opts = {
+            transport: new window.SmallWebRTCTransport({ 
+                connectionUrl: '/api/offer' 
+            }),
+            enableMic: true,
+            enableCam: false,
+            callbacks: {
+                onTransportStateChanged: (state) => {
+                    console.log(`Transport state: ${state}`)
+                },
+                onConnected: () => {
+                    console.log('Pipecat client connected')
+                    _onConnected()
+                },
+                onBotReady: () => {
+                    console.log('Bot is ready')
+                },
+                onDisconnected: () => {
+                    console.log('Pipecat client disconnected')
+                    _onDisconnected()
+                },
+                onUserStartedSpeaking: () => {
+                    console.log('User started speaking')
+                    showListening()
+                },
+                onUserStoppedSpeaking: () => {
+                    console.log('User stopped speaking')
+                    hideListening()
+                },
+                onBotStartedSpeaking: () => {
+                    console.log('Bot started speaking')
+                    conversation.hideProcessing()
+                },
+                onBotStoppedSpeaking: () => {
+                    console.log('Bot stopped speaking')
+                },
+                onUserTranscript: (transcript) => {
+                    if (transcript.final) {
+                        console.log(`User transcript: ${transcript.text}`)
+                        conversation.addUserMessage(transcript.text)
+                    }
+                },
+                onBotTranscript: (data) => {
+                    console.log(`Bot transcript: ${data.text}`)
+                    conversation.hideProcessing()
+                    conversation.addAIMessage(data.text)
+                },
+                onTrackStarted: (track, participant) => {
+                    if (participant?.local) {
+                        return
+                    }
+                    if (track.kind === 'audio') {
+                        console.log('Bot audio track started')
+                        audioEl.srcObject = new MediaStream([track])
+                    }
+                },
+                onServerMessage: (msg) => {
+                    console.log(`Server message:`, msg)
+                }
             }
-        };
-        const onTimeout = () => {
-            console.warn(`ICE gathering timed out after ${timeoutMs} ms.`);
-            cleanup();
-            resolve();
-        };
-        const cleanup = () => {
-            pc.removeEventListener('icegatheringstatechange', checkState);
-            clearTimeout(timeoutId);
-        };
-        pc.addEventListener('icegatheringstatechange', checkState);
-        timeoutId = setTimeout(onTimeout, timeoutMs);
-        // Checking the state again to avoid any eventual race condition
-        checkState();
-    });
-};
-
-
-const createSmallWebRTCConnection = async (audioTrack) => {
-    const config = {
-      iceServers: [],
-    };
-    const pc = new RTCPeerConnection(config)
-    addPeerConnectionEventListeners(pc)
-    pc.ontrack = e => audioEl.srcObject = e.streams[0]
-    // SmallWebRTCTransport expects to receive both transceivers
-    pc.addTransceiver(audioTrack, { direction: 'sendrecv' })
-    pc.addTransceiver('video', { direction: 'sendrecv' })
-    await pc.setLocalDescription(await pc.createOffer())
-    await waitForIceGatheringComplete(pc)
-    const offer = pc.localDescription
-    const response = await fetch('/api/offer', {
-        body: JSON.stringify({ sdp: offer.sdp, type: offer.type}),
-        headers: { 'Content-Type': 'application/json' },
-        method: 'POST',
-    });
-    const answer = await response.json()
-    await pc.setRemoteDescription(answer)
-    return pc
+        }
+        
+        pcClient = new window.PipecatClient(opts)
+        console.log('PipecatClient initialized successfully')
+    } catch (error) {
+        console.error('Failed to initialize PipecatClient:', error)
+    }
 }
 
 const connect = async () => {
     try {
         _onConnecting()
-        audioStream = await navigator.mediaDevices.getUserMedia({audio: true})
-        peerConnection = await createSmallWebRTCConnection(audioStream.getAudioTracks()[0])
+        conversation.showProcessing()
+        
+        console.log('Connecting to Pipecat server...')
+        await pcClient.connect()
+        
     } catch (error) {
-        console.error('Failed to access microphone:', error)
-        conversation.addAIMessage('Failed to access microphone. Please check permissions and try again.')
+        console.error('Failed to connect:', error)
+        conversation.addAIMessage(`Failed to connect: ${error.message}`)
         _onDisconnected()
     }
-}
-
-const addPeerConnectionEventListeners = (pc) => {
-    pc.oniceconnectionstatechange = () => {
-        console.log("oniceconnectionstatechange", pc?.iceConnectionState)
-    }
-    pc.onconnectionstatechange = () => {
-        console.log("onconnectionstatechange", pc?.connectionState)
-        let connectionState = pc?.connectionState
-        if (connectionState === 'connected') {
-            _onConnected()
-        } else if (connectionState === 'disconnected') {
-            _onDisconnected()
-        }
-    }
-    pc.onicecandidate = (event) => {
-        if (event.candidate) {
-            console.log("New ICE candidate:", event.candidate);
-        } else {
-            console.log("All ICE candidates have been sent.");
-        }
-    };
 }
 
 // Message management
@@ -183,193 +185,7 @@ const hideListening = () => {
     }
 }
 
-// Real-time Pipecat Integration with RTVI Events
-let dataChannel = null
 
-const setupRTVIDataChannel = () => {
-    if (!peerConnection) return
-    
-    // Try to listen for Pipecat's data channel (optional)
-    peerConnection.addEventListener('datachannel', (event) => {
-        dataChannel = event.channel
-        console.log('Pipecat data channel received:', dataChannel.label)
-        
-        dataChannel.addEventListener('message', handleRTVIMessage)
-        dataChannel.addEventListener('open', () => {
-            console.log('Pipecat data channel ready')
-        })
-        dataChannel.addEventListener('close', () => {
-            console.log('Pipecat data channel closed')
-            dataChannel = null
-        })
-    })
-    
-    // Primary: Audio-based event detection
-    setupAudioEventFallback()
-}
-
-const handleRTVIMessage = (event) => {
-    try {
-        const data = JSON.parse(event.data)
-        console.log('RTVI Event:', data)
-        
-        // Handle different RTVI event formats
-        const eventType = data.type || data.event_type || data.action
-        const eventData = data.data || data.payload || data
-        
-        switch (eventType) {
-            case 'user-started-speaking':
-            case 'user_started_speaking':
-            case 'speech-started':
-                showListening()
-                break
-                
-            case 'user-stopped-speaking':
-            case 'user_stopped_speaking':
-            case 'speech-stopped':
-                hideListening()
-                break
-                
-            case 'user-transcription':
-            case 'user_transcription':
-            case 'transcription':
-                if (eventData && eventData.text && (eventData.final || eventData.is_final)) {
-                    conversation.addUserMessage(eventData.text)
-                }
-                break
-                
-            case 'bot-llm-started':
-            case 'bot_llm_started':
-            case 'llm-started':
-            case 'ai-thinking':
-                conversation.showProcessing()
-                break
-                
-            case 'bot-llm-stopped':
-            case 'bot_llm_stopped':
-            case 'llm-stopped':
-                conversation.hideProcessing()
-                break
-                
-            case 'bot-llm-text':
-            case 'bot_llm_text':
-            case 'llm-text':
-            case 'ai-response':
-                if (eventData && eventData.text) {
-                    conversation.hideProcessing()
-                    conversation.addAIMessage(eventData.text)
-                }
-                break
-                
-            case 'bot-tts-started':
-            case 'bot_tts_started':
-            case 'tts-started':
-                // Bot is speaking
-                break
-                
-            case 'bot-tts-stopped':
-            case 'bot_tts_stopped':
-            case 'tts-stopped':
-                // Bot finished speaking
-                break
-                
-            default:
-                console.log('Unhandled RTVI event:', eventType, data)
-        }
-    } catch (error) {
-        // Try to handle non-JSON messages
-        console.log('Received non-JSON message:', event.data)
-    }
-}
-
-// Audio-based event detection fallback
-let isCurrentlyListening = false
-let audioAnalyzer = null
-let audioTimeout = null
-
-const setupAudioEventFallback = () => {
-    // Monitor user audio input for speech detection
-    if (audioStream && audioStream.getAudioTracks().length > 0) {
-        try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)()
-            const source = audioContext.createMediaStreamSource(audioStream)
-            audioAnalyzer = audioContext.createAnalyser()
-            audioAnalyzer.fftSize = 256
-            source.connect(audioAnalyzer)
-            
-            monitorAudioActivity()
-        } catch (error) {
-            console.log('Could not setup audio analyzer:', error)
-        }
-    }
-    
-    // Monitor bot audio output
-    const monitorBotAudio = () => {
-        if (!audioEl.srcObject) {
-            setTimeout(monitorBotAudio, 100)
-            return
-        }
-        
-        audioEl.addEventListener('playing', () => {
-            console.log('Bot started speaking')
-        })
-        
-        audioEl.addEventListener('ended', () => {
-            console.log('Bot finished speaking')
-        })
-        
-        audioEl.addEventListener('pause', () => {
-            console.log('Bot audio paused')
-        })
-    }
-    
-    monitorBotAudio()
-}
-
-const monitorAudioActivity = () => {
-    if (!audioAnalyzer) return
-    
-    const bufferLength = audioAnalyzer.frequencyBinCount
-    const dataArray = new Uint8Array(bufferLength)
-    
-    const checkAudio = () => {
-        audioAnalyzer.getByteFrequencyData(dataArray)
-        
-        // Calculate average volume
-        let sum = 0
-        for (let i = 0; i < bufferLength; i++) {
-            sum += dataArray[i]
-        }
-        const average = sum / bufferLength
-        
-        // Detect speech activity (threshold can be adjusted)
-        const isActive = average > 10
-        
-        if (isActive && !isCurrentlyListening) {
-            isCurrentlyListening = true
-            showListening()
-            console.log('Audio activity detected - user started speaking')
-        } else if (!isActive && isCurrentlyListening) {
-            // Add delay before stopping listening indicator
-            clearTimeout(audioTimeout)
-            audioTimeout = setTimeout(() => {
-                isCurrentlyListening = false
-                hideListening()
-                console.log('Audio activity stopped - user stopped speaking')
-            }, 1000) // 1 second delay
-        }
-        
-        // Continue monitoring
-        requestAnimationFrame(checkAudio)
-    }
-    
-    checkAudio()
-}
-
-// Export for easy integration
-window.conversation = conversation
-window.showListening = showListening
-window.hideListening = hideListening
 
 // Connection status handlers
 const _onConnecting = () => {
@@ -384,9 +200,7 @@ const _onConnected = () => {
     statusEl.className = "connected"
     buttonEl.textContent = "Disconnect"
     connected = true
-    
-    // Setup RTVI data channel for conversation events
-    setupRTVIDataChannel()
+    conversation.hideProcessing()
 }
 
 const _onDisconnected = () => {
@@ -394,51 +208,18 @@ const _onDisconnected = () => {
     statusEl.className = ""
     buttonEl.textContent = "Connect"
     connected = false
-    
-    // Clear any processing indicators
     hideListening()
     conversation.hideProcessing()
-    
-    // Clear demo conversation (optional - remove if you want to keep conversation history)
-    setTimeout(() => {
-        conversation.clear()
-    }, 1000)
+    setTimeout(() => conversation.clear(), 1000)
 }
 
 const disconnect = () => {
-    // Stop microphone access
-    if (audioStream) {
-        audioStream.getTracks().forEach(track => {
-            track.stop()
-            console.log('Microphone track stopped')
-        })
-        audioStream = null
+    if (pcClient) {
+        console.log('Disconnecting from Pipecat server...')
+        pcClient.disconnect()
     }
-    
-    // Stop any listening indicators
     hideListening()
-    
-    // Clean up audio monitoring
-    if (audioTimeout) {
-        clearTimeout(audioTimeout)
-        audioTimeout = null
-    }
-    isCurrentlyListening = false
-    audioAnalyzer = null
-    
-    // Close data channel
-    if (dataChannel) {
-        dataChannel.close()
-        dataChannel = null
-    }
-    
-    // Close peer connection
-    if (peerConnection) {
-        peerConnection.close()
-        peerConnection = null
-    }
-    
-    _onDisconnected()
+    conversation.hideProcessing()
 }
 
 buttonEl.addEventListener("click", async () => {
@@ -447,4 +228,10 @@ buttonEl.addEventListener("click", async () => {
     } else {
         disconnect()
     }
-});
+})
+
+// Initialize client when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing Pipecat...')
+    initializePipecatClient()
+})

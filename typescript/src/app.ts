@@ -14,11 +14,8 @@ class WebRTCApp {
   private declare muteBtn: HTMLButtonElement;
 
   private declare audioInput: HTMLSelectElement;
-  private declare videoInput: HTMLSelectElement;
   private declare audioCodec: HTMLSelectElement;
-  private declare videoCodec: HTMLSelectElement;
 
-  private declare videoElement: HTMLVideoElement;
   private declare audioElement: HTMLAudioElement;
 
   private debugLog: HTMLElement | null = null;
@@ -38,7 +35,7 @@ class WebRTCApp {
     const opts: PipecatClientOptions = {
       transport: new SmallWebRTCTransport({ connectionUrl: '/api/offer' }),
       enableMic: true,
-      enableCam: true,
+      enableCam: false,
       callbacks: {
         onTransportStateChanged: (state: TransportState) => {
           this.log(`Transport state: ${state}`);
@@ -102,19 +99,10 @@ class WebRTCApp {
     this.audioInput = document.getElementById(
       'audio-input'
     ) as HTMLSelectElement;
-    this.videoInput = document.getElementById(
-      'video-input'
-    ) as HTMLSelectElement;
     this.audioCodec = document.getElementById(
       'audio-codec'
     ) as HTMLSelectElement;
-    this.videoCodec = document.getElementById(
-      'video-codec'
-    ) as HTMLSelectElement;
 
-    this.videoElement = document.getElementById(
-      'bot-video'
-    ) as HTMLVideoElement;
     this.audioElement = document.getElementById(
       'bot-audio'
     ) as HTMLAudioElement;
@@ -131,15 +119,10 @@ class WebRTCApp {
       let audioDevice = e.target?.value;
       this.pcClient.updateMic(audioDevice);
     });
-    this.videoInput.addEventListener('change', (e) => {
-      // @ts-ignore
-      let videoDevice = e.target?.value;
-      this.pcClient.updateCam(videoDevice);
-    });
     this.muteBtn.addEventListener('click', () => {
-      let isCamEnabled = this.pcClient.isCamEnabled;
-      this.pcClient.enableCam(!isCamEnabled);
-      this.muteBtn.textContent = isCamEnabled ? '📵' : '📷';
+      let isMicEnabled = this.pcClient.isMicEnabled;
+      this.pcClient.enableMic(!isMicEnabled);
+      this.muteBtn.textContent = isMicEnabled ? '🔇' : '🎤';
     });
   }
 
@@ -180,9 +163,7 @@ class WebRTCApp {
   }
 
   private onBotTrackStarted(track: MediaStreamTrack) {
-    if (track.kind === 'video') {
-      this.videoElement.srcObject = new MediaStream([track]);
-    } else {
+    if (track.kind === 'audio') {
       this.audioElement.srcObject = new MediaStream([track]);
     }
   }
@@ -205,8 +186,6 @@ class WebRTCApp {
     try {
       const audioDevices = await this.pcClient.getAllMics();
       populateSelect(this.audioInput, audioDevices);
-      const videoDevices = await this.pcClient.getAllCams();
-      populateSelect(this.videoInput, videoDevices);
     } catch (e) {
       alert(e);
     }
@@ -219,7 +198,6 @@ class WebRTCApp {
     this.updateStatus('Connecting');
 
     this.smallWebRTCTransport.setAudioCodec(this.audioCodec.value);
-    this.smallWebRTCTransport.setVideoCodec(this.videoCodec.value);
     try {
       await this.pcClient.connect();
     } catch (e) {
