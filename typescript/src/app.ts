@@ -20,6 +20,7 @@ class WebRTCApp {
 
   private debugLog: HTMLElement | null = null;
   private statusSpan: HTMLElement | null = null;
+  private statusIndicator: HTMLElement | null = null;
 
   private declare smallWebRTCTransport: SmallWebRTCTransport;
   private declare pcClient: PipecatClient;
@@ -67,7 +68,7 @@ class WebRTCApp {
           }
         },
         onBotTranscript: (data: BotLLMTextData) => {
-          this.log(`Bot transcript: ${data.text}`);
+          this.log(`AI transcript: ${data.text}`);
         },
         onTrackStarted: (
           track: MediaStreamTrack,
@@ -88,27 +89,15 @@ class WebRTCApp {
   }
 
   private setupDOMElements(): void {
-    this.connectBtn = document.getElementById(
-      'connect-btn'
-    ) as HTMLButtonElement;
-    this.disconnectBtn = document.getElementById(
-      'disconnect-btn'
-    ) as HTMLButtonElement;
+    this.connectBtn = document.getElementById('connect-btn') as HTMLButtonElement;
+    this.disconnectBtn = document.getElementById('disconnect-btn') as HTMLButtonElement;
     this.muteBtn = document.getElementById('mute-btn') as HTMLButtonElement;
-
-    this.audioInput = document.getElementById(
-      'audio-input'
-    ) as HTMLSelectElement;
-    this.audioCodec = document.getElementById(
-      'audio-codec'
-    ) as HTMLSelectElement;
-
-    this.audioElement = document.getElementById(
-      'bot-audio'
-    ) as HTMLAudioElement;
-
+    this.audioInput = document.getElementById('audio-input') as HTMLSelectElement;
+    this.audioCodec = document.getElementById('audio-codec') as HTMLSelectElement;
+    this.audioElement = document.getElementById('bot-audio') as HTMLAudioElement;
     this.debugLog = document.getElementById('debug-log');
     this.statusSpan = document.getElementById('connection-status');
+    this.statusIndicator = document.querySelector('.status-indicator');
   }
 
   private setupDOMEventListeners(): void {
@@ -123,18 +112,29 @@ class WebRTCApp {
       let isMicEnabled = this.pcClient.isMicEnabled;
       this.pcClient.enableMic(!isMicEnabled);
       this.muteBtn.textContent = isMicEnabled ? '🔇' : '🎤';
+      this.muteBtn.classList.toggle('muted', isMicEnabled);
     });
   }
 
   private log(message: string): void {
     if (!this.debugLog) return;
     const entry = document.createElement('div');
-    entry.textContent = `${new Date().toISOString()} - ${message}`;
-    if (message.startsWith('User: ')) {
-      entry.style.color = '#2196F3';
-    } else if (message.startsWith('Bot: ')) {
-      entry.style.color = '#4CAF50';
+    const timestamp = new Date().toLocaleTimeString();
+    entry.textContent = `${timestamp} - ${message}`;
+    
+    if (message.includes('User transcript:')) {
+      entry.style.color = '#667eea';
+      entry.style.fontWeight = '500';
+    } else if (message.includes('AI transcript:')) {
+      entry.style.color = '#2ed573';
+      entry.style.fontWeight = '500';
+    } else if (message.includes('started speaking')) {
+      entry.style.color = '#ff9f43';
+    } else if (message.includes('Status:')) {
+      entry.style.color = '#333';
+      entry.style.fontWeight = '600';
     }
+    
     this.debugLog.appendChild(entry);
     this.debugLog.scrollTop = this.debugLog.scrollHeight;
   }
@@ -146,6 +146,9 @@ class WebRTCApp {
   private updateStatus(status: string): void {
     if (this.statusSpan) {
       this.statusSpan.textContent = status;
+    }
+    if (this.statusIndicator) {
+      this.statusIndicator.classList.toggle('connected', status === 'Connected');
     }
     this.log(`Status: ${status}`);
   }

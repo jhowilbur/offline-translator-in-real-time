@@ -3,54 +3,52 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebRTC demo</title>
+    <title>Wilbur AI - Idiom Interpreter & Translator</title>
 </head>
 <body>
+    <div class="app">
+        <header class="header">
+            <h1>Wilbur AI - Idiom Interpreter & Translator</h1>
+            <div class="status">
+                <div class="status-indicator"></div>
+                <span id="connection-status">Disconnected</span>
+            </div>
+        </header>
 
-<div class="container">
-    <!-- Settings Bar -->
-    <div class="status-bar">
-        <div class="option">
-            <label>Audio</label>
-            <select id="audio-input">
-                <option value="" selected>Default device</option>
-            </select>
-            <select id="audio-codec">
-                <option value="default" selected>Default codecs</option>
-                <option value="opus/48000/2">Opus</option>
-                <option value="PCMU/8000">PCMU</option>
-                <option value="PCMA/8000">PCMA</option>
-            </select>
-        </div>
+        <main class="main">
+            <div class="controls-card">
+                <div class="audio-settings">
+                    <select id="audio-input" class="select">
+                        <option value="" selected>Default microphone</option>
+                    </select>
+                    <select id="audio-codec" class="select">
+                        <option value="default" selected>Auto codec</option>
+                        <option value="opus/48000/2">Opus</option>
+                        <option value="PCMU/8000">PCMU</option>
+                        <option value="PCMA/8000">PCMA</option>
+                    </select>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="connect-btn" class="btn btn-primary">Connect</button>
+                    <button id="disconnect-btn" class="btn btn-secondary" disabled>Disconnect</button>
+                    <button id="mute-btn" class="btn btn-icon">🎤</button>
+                </div>
+            </div>
 
+            <div class="transcript-card">
+                <div class="transcript-header">
+                    <h2>Conversation</h2>
+                    <div class="clear-btn" onclick="document.getElementById('debug-log').innerHTML = ''">Clear</div>
+                </div>
+                <div id="debug-log" class="transcript-content"></div>
+            </div>
+        </main>
+
+        <audio id="bot-audio" autoplay></audio>
     </div>
 
-    <!-- Status Bar -->
-    <div class="status-bar">
-        <div class="status">
-            Status: <span id="connection-status">Disconnected</span>
-        </div>
-        <div class="controls">
-            <button id="connect-btn">Connect</button>
-            <button id="disconnect-btn" disabled>Disconnect</button>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="bot-container">
-            <button id="mute-btn">🎤</button>
-            <audio id="bot-audio" autoplay></audio>
-        </div>
-        <!-- Debug Panel -->
-        <div class="debug-panel">
-            <div id="debug-log"></div>
-        </div>
-    </div>
-</div>
-
-<script type="module" src="/src/app.ts"></script>
-<link rel="stylesheet" href="/src/style.css">
-
+    <script type="module" src="/src/app.ts"></script>
+    <link rel="stylesheet" href="/src/style.css">
 </body>
 </html>
