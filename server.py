@@ -16,9 +16,6 @@ from pipecat.runner.types import SmallWebRTCRunnerArguments
 
 app = FastAPI()
 
-# Mount static files directory
-app.mount("/src", StaticFiles(directory="src"), name="static")
-
 # Store connections by pc_id
 pcs_map: Dict[str, SmallWebRTCConnection] = {}
 
@@ -63,7 +60,7 @@ async def offer(request: dict, background_tasks: BackgroundTasks):
 
 @app.get("/")
 async def serve_index():
-    return FileResponse("index.html")
+    return {"message": "Welcome to Wilbur AI - Idiom Interpreter & Translator", "status": "running"}
 
 
 @asynccontextmanager
