@@ -188,6 +188,10 @@ class WebRTCApp {
     }
   }
 
+  private autoScroll(element: HTMLElement): void {
+    element.scrollTo({ top: element.scrollHeight, behavior: 'smooth' });
+  }
+
   private logTranscript(message: string, isUser: boolean): void {
     if (!this.transcriptLog) return;
     
@@ -200,7 +204,7 @@ class WebRTCApp {
     }
     
     this.transcriptLog.appendChild(entry);
-    this.transcriptLog.scrollTop = this.transcriptLog.scrollHeight;
+    this.autoScroll(this.transcriptLog);
   }
 
   private logDebug(message: string): void {
@@ -218,7 +222,7 @@ class WebRTCApp {
     }
     
     this.debugLog.appendChild(entry);
-    this.debugLog.scrollTop = this.debugLog.scrollHeight;
+    this.autoScroll(this.debugLog);
   }
 
   private log(message: string): void {
