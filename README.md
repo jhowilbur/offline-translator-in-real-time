@@ -62,6 +62,17 @@ Wilbur AI features an elegant, user-friendly interface designed for instant comm
 
 ### 1️⃣ Start the Wilbur AI Offline Interpreter
 
+#### 📌 Requirements
+
+- Ollama running on the address 'http://localhost:11434/v1' with the Gemma3n model 'gemma3n:e2b'
+- Python **3.10+**
+- Node.js **16+** (for JavaScript components)
+- Modern web browser with WebRTC support to open localhost
+- Microphone
+- Notes:
+   - Run it once just to check that you have everything you need and to ensure that everything works offline
+   - **No internet connection after it worked**
+
 #### 🔧 Set Up the Environment
 1. Create and activate a virtual environment:
    ```bash
@@ -103,15 +114,6 @@ http://localhost:5173
 ```
 
 > **Note**: The frontend client will communicate with the Python server running on `http://localhost:7860`
-
-## 📌 Requirements
-
-- Google Gemma AI
-- Ollama running on the address 'http://localhost:11434/v1' with the Gemma3n model 'gemma3n:e2b'
-- Modern web browser with WebRTC support to open localhost
-- Python **3.10+**
-- Node.js **16+** (for JavaScript components)
-- **NO INTERNET**
 
 ---
 
