@@ -16,27 +16,27 @@ from pipecat.transports.base_transport import BaseTransport, TransportParams
 
 load_dotenv(override=True)
 
-async def run_bot(pipecat_transport: BaseTransport, target_language_code: str = 'FR_FR', source_language_code: str = None):
+async def run_bot(pipecat_transport: BaseTransport, target_language_code: str = 'FR_FR', source_language_code: str = 'EN_US'):
     # Convert string to Language enum for target language
     try:
         languageToTranslate = getattr(Language, target_language_code)
     except AttributeError:
         languageToTranslate = Language.FR_FR  # fallback
 
-    # Configure STT with source language if provided
+    # Convert string to Language enum for source language
+    try:
+        source_language = getattr(Language, source_language_code)
+    except AttributeError:
+        source_language = Language.EN_US  # fallback to English
+
+    # Configure STT with source language
     stt_params = {
         "model": Model.LARGE_V3_TURBO,
         "device": "cuda",
         "compute_type": "float16",  # Reduce memory usage
         "no_speech_prob": 0.3,      # Lower threshold for speech detection
+        "language": source_language
     }
-    
-    if source_language_code:
-        try:
-            source_language = getattr(Language, source_language_code)
-            stt_params["language"] = source_language
-        except AttributeError:
-            pass  # Use auto-detection if invalid language
     
     stt = WhisperSTTService(**stt_params)
 
@@ -100,7 +100,7 @@ async def run_bot(pipecat_transport: BaseTransport, target_language_code: str = 
     await runner.run(task)
 
 
-async def start_bot(webrtc_connection, target_language_code: str = 'FR_FR', source_language_code: str = None):
+async def start_bot(webrtc_connection, target_language_code: str = 'FR_FR', source_language_code: str = 'EN_US'):
     """Main bot entry point for the bot starter."""
 
     transport = SmallWebRTCTransport(

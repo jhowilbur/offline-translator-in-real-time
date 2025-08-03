@@ -135,12 +135,20 @@ class WebRTCApp {
       this.muteBtn.classList.toggle('muted', isMicEnabled);
     });
     
-    // Remove required styling when target language is selected
+    // Remove required styling when languages are selected
     this.languageSelect.addEventListener('change', () => {
       if (this.languageSelect.value) {
         this.languageSelect.classList.remove('required');
       } else {
         this.languageSelect.classList.add('required');
+      }
+    });
+    
+    this.sourceLanguageSelect.addEventListener('change', () => {
+      if (this.sourceLanguageSelect.value) {
+        this.sourceLanguageSelect.classList.remove('required');
+      } else {
+        this.sourceLanguageSelect.classList.add('required');
       }
     });
     
@@ -248,6 +256,12 @@ class WebRTCApp {
     this.updateStatus('Connected');
     if (this.connectBtn) this.connectBtn.disabled = true;
     if (this.disconnectBtn) this.disconnectBtn.disabled = false;
+    
+    // Disable language selectors when connected
+    this.sourceLanguageSelect.disabled = true;
+    this.languageSelect.disabled = true;
+    this.sourceLanguageSelect.classList.add('disabled');
+    this.languageSelect.classList.add('disabled');
   }
 
   private onDisconnectedHandler() {
@@ -255,6 +269,12 @@ class WebRTCApp {
     this.hideListeningIndicator(); // Hide listening indicator on disconnect
     if (this.connectBtn) this.connectBtn.disabled = false;
     if (this.disconnectBtn) this.disconnectBtn.disabled = true;
+    
+    // Re-enable language selectors when disconnected
+    this.sourceLanguageSelect.disabled = false;
+    this.languageSelect.disabled = false;
+    this.sourceLanguageSelect.classList.remove('disabled');
+    this.languageSelect.classList.remove('disabled');
   }
 
   private onBotTrackStarted(track: MediaStreamTrack) {
@@ -290,6 +310,12 @@ class WebRTCApp {
     const selectedTargetLanguage = this.languageSelect.value;
     const selectedSourceLanguage = this.sourceLanguageSelect.value;
     
+    if (!selectedSourceLanguage) {
+      alert('Please select the language you speak before connecting.');
+      this.connectBtn.disabled = false;
+      return;
+    }
+    
     if (!selectedTargetLanguage) {
       alert('Please select a target language before connecting.');
       this.connectBtn.disabled = false;
@@ -300,6 +326,12 @@ class WebRTCApp {
     this.connectBtn.disabled = true;
     this.updateStatus('Connecting');
 
+    // Disable language selectors during connection
+    this.sourceLanguageSelect.disabled = true;
+    this.languageSelect.disabled = true;
+    this.sourceLanguageSelect.classList.add('disabled');
+    this.languageSelect.classList.add('disabled');
+
     // Reinitialize client with language parameters
     this.initializePipecatClientWithLanguage(selectedTargetLanguage, selectedSourceLanguage);
     this.smallWebRTCTransport.setAudioCodec(this.audioCodec.value);
@@ -308,6 +340,11 @@ class WebRTCApp {
       await this.pcClient.connect();
     } catch (e) {
       console.log(`Failed to connect ${e}`);
+      // Re-enable language selectors on connection failure
+      this.sourceLanguageSelect.disabled = false;
+      this.languageSelect.disabled = false;
+      this.sourceLanguageSelect.classList.remove('disabled');
+      this.languageSelect.classList.remove('disabled');
       this.stop();
     }
   }

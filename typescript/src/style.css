@@ -124,6 +124,20 @@ body {
     box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
 }
 
+.language-select:disabled,
+.language-select.disabled {
+    background-color: #f9fafb;
+    color: #9ca3af;
+    border-color: #e5e7eb;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.language-select:disabled:hover,
+.language-select.disabled:hover {
+    border-color: #e5e7eb;
+}
+
 .audio-settings {
     display: flex;
     flex-wrap: wrap;
