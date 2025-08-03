@@ -24,6 +24,7 @@ class WebRTCApp {
   private statusSpan: HTMLElement | null = null;
   private statusIndicator: HTMLElement | null = null;
   private isDebugMode: boolean = false;
+  private listeningIndicator: HTMLElement | null = null;
 
   private declare smallWebRTCTransport: SmallWebRTCTransport;
   private declare pcClient: PipecatClient;
@@ -54,9 +55,11 @@ class WebRTCApp {
           this.onDisconnectedHandler();
         },
         onUserStartedSpeaking: () => {
+          this.showListeningIndicator();
           this.log('User started speaking.');
         },
         onUserStoppedSpeaking: () => {
+          this.hideListeningIndicator();
           this.log('User stopped speaking.');
         },
         onBotStartedSpeaking: () => {
@@ -66,9 +69,7 @@ class WebRTCApp {
           this.log('Bot stopped speaking.');
         },
         onUserTranscript: (transcript: TranscriptData) => {
-          if (transcript.final) {
-            this.log(`User transcript: ${transcript.text}`);
-          }
+          this.log(`User transcript: ${transcript.text}`);
         },
         onBotTranscript: (data: BotLLMTextData) => {
           this.log(`AI transcript: ${data.text}`);
@@ -103,6 +104,7 @@ class WebRTCApp {
     this.debugToggle = document.getElementById('debug-toggle') as HTMLButtonElement;
     this.statusSpan = document.getElementById('connection-status');
     this.statusIndicator = document.querySelector('.status-indicator');
+    this.listeningIndicator = document.getElementById('listening-indicator');
   }
 
   private setupDOMEventListeners(): void {
@@ -123,6 +125,24 @@ class WebRTCApp {
     this.debugToggle?.addEventListener('click', () => {
       this.toggleDebugMode();
     });
+  }
+
+  private showListeningIndicator(): void {
+    if (this.listeningIndicator) {
+      this.listeningIndicator.classList.remove('hidden');
+    }
+    if (this.muteBtn) {
+      this.muteBtn.classList.add('listening');
+    }
+  }
+
+  private hideListeningIndicator(): void {
+    if (this.listeningIndicator) {
+      this.listeningIndicator.classList.add('hidden');
+    }
+    if (this.muteBtn) {
+      this.muteBtn.classList.remove('listening');
+    }
   }
 
   private toggleDebugMode(): void {
@@ -210,6 +230,7 @@ class WebRTCApp {
 
   private onDisconnectedHandler() {
     this.updateStatus('Disconnected');
+    this.hideListeningIndicator(); // Hide listening indicator on disconnect
     if (this.connectBtn) this.connectBtn.disabled = false;
     if (this.disconnectBtn) this.disconnectBtn.disabled = true;
   }

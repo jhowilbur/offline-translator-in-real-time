@@ -203,3 +203,7 @@ __marimo__/
 .streamlit/secrets.toml
 
 node_modules/
+typescript/node_modules/
+
+typescript/localhost+3-key.pem
+typescript/localhost+3.pem

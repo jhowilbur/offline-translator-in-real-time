@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react-swc';
 
 // HTTPS Configuration
 // uncomment the line below to enable HTTPS
-const USE_HTTPS = false;
+const USE_HTTPS = true;
 
 export default defineConfig({
     plugins: [react()],
