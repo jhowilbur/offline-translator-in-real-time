@@ -1,6 +1,3 @@
-import os
-import sys
-
 from dotenv import load_dotenv
 from loguru import logger
 from pipecat.audio.vad.silero import SileroVADAnalyzer
@@ -14,7 +11,6 @@ from pipecat.services.ollama import OLLamaLLMService
 from pipecat.transcriptions.language import Language
 from pipecat.services.whisper.stt import WhisperSTTService, Model
 from pipecat.processors.frameworks.rtvi import RTVIConfig, RTVIObserver, RTVIProcessor
-from pipecat.runner.types import RunnerArguments
 from pipecat.transports.base_transport import BaseTransport, TransportParams
 
 

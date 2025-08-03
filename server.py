@@ -6,13 +6,10 @@ from typing import Dict
 
 import uvicorn
 from bot import start_bot
-from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from pipecat.transports.network.webrtc_connection import IceServer, SmallWebRTCConnection
-from pipecat.runner.types import SmallWebRTCRunnerArguments
+
 
 app = FastAPI()
 
