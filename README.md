@@ -117,3 +117,20 @@ http://localhost:5173
 
 ### 💡 Notes
 - Ensure all dependencies are installed before running.
+
+#### ✅ Tested System Configuration
+This application was successfully tested on:
+- **OS**: Windows 11
+- **Processor**: AMD Ryzen 5 7500F 6-Core (3.70 GHz)
+- **RAM**: 8 GB
+- **Graphics**: NVIDIA GeForce RTX 4060 (8 GB VRAM)
+- **Performance**: ⚡ **Real-time translation responses** - translations appear instantly with near-zero latency
+
+#### 📱 Device Compatibility
+- **Mobile Devices**: Adaptable for smartphones and tablets by adjusting model parameters
+- **CPU-Only Systems**: Fully compatible with devices without dedicated GPUs
+- **Low-Spec Hardware**: Configurable parameters in the code allow optimization for various hardware capabilities
+- **Cross-Platform**: Can be adapted for different operating systems and architectures
+
+> **Note**: Performance may vary based on hardware specifications. The code includes configurable parameters that can be tuned for optimal performance on your specific device.
+
