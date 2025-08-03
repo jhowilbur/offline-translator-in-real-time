@@ -26,12 +26,30 @@ Wilbur AI Offline Interpreter.
 python server.py
 ```
 
-### 2️⃣ Connect Using the Client App
+### 2️⃣ Set Up and Run the Frontend Client
 
-Open your browser and visit:
+#### 🔧 Navigate to Frontend Directory
+```bash
+cd typescript
 ```
-http://localhost:7860
+
+#### 📦 Install Frontend Dependencies
+```bash
+npm install
 ```
+
+#### ▶️ Run the Frontend Client
+```bash
+npm run dev
+```
+
+#### 🌐 Open in Browser
+Visit the frontend application:
+```
+http://localhost:5173
+```
+
+> **Note**: The frontend client will communicate with the Python server running on `http://localhost:7860`
 
 ## 📌 Requirements
 

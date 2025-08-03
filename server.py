@@ -6,7 +6,7 @@ from typing import Dict
 
 import uvicorn
 from bot import start_bot
-from fastapi import BackgroundTasks, FastAPI
+from fastapi import BackgroundTasks, FastAPI, Request
 from loguru import logger
 from pipecat.transports.network.webrtc_connection import IceServer, SmallWebRTCConnection
 
@@ -24,7 +24,7 @@ ice_servers = [
 
 
 @app.post("/api/offer")
-async def offer(request: dict, background_tasks: BackgroundTasks):
+async def offer(request: dict, background_tasks: BackgroundTasks, req: Request):
     pc_id = request.get("pc_id")
 
     if pc_id and pc_id in pcs_map:
@@ -44,7 +44,8 @@ async def offer(request: dict, background_tasks: BackgroundTasks):
             logger.info(f"Discarding peer connection for pc_id: {webrtc_connection.pc_id}")
             pcs_map.pop(webrtc_connection.pc_id, None)
 
-        background_tasks.add_task(start_bot, pipecat_connection)
+        language = req.query_params.get('language', 'FR_FR')
+        background_tasks.add_task(start_bot, pipecat_connection, language)
         # runner_args = SmallWebRTCRunnerArguments(webrtc_connection=pipecat_connection)
         # background_tasks.add_task(start_bot, runner_args)
 

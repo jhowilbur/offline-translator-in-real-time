@@ -16,17 +16,12 @@ from pipecat.transports.base_transport import BaseTransport, TransportParams
 
 load_dotenv(override=True)
 
-languageToTranslate = Language.FR_FR
-
-SYSTEM_INSTRUCTION = f"""
-"You are an expert Idiom Interpreter & Translator. 
-
-Your job is to translate idioms and figurative expressions into {languageToTranslate}, preserving their cultural and emotional meaning. 
-
-Always give the translation directly, without extra explanation or commentary.
-"""
-
-async def run_bot(pipecat_transport: BaseTransport):
+async def run_bot(pipecat_transport: BaseTransport, language_code: str = 'FR_FR'):
+    # Convert string to Language enum
+    try:
+        languageToTranslate = getattr(Language, language_code)
+    except AttributeError:
+        languageToTranslate = Language.FR_FR  # fallback
 
     stt = WhisperSTTService(
         model=Model.LARGE_V3_TURBO,
@@ -83,7 +78,7 @@ async def run_bot(pipecat_transport: BaseTransport):
     async def on_client_connected(transport, client):
         logger.info("Client connected")
         # Kick off the conversation.
-        messages.append({"role": "system", "content": f"Say in {languageToTranslate}: Hello! I'm Ultimate Idiom Interpreter & Translator, a new version of AI that can help you precisely interpret idiomatic expressions and translate them into another specified language, while preserving cultural, emotional, and contextual meaning."})
+        messages.append({"role": "system", "content": f"Say in {languageToTranslate}: Hello! I'm an AI, Idiom Interpreter & Translator, a new version of AI that can help you precisely interpret idiomatic expressions and translate them into another specified language, while preserving cultural, emotional, and contextual meaning."})
         await task.queue_frames([context_aggregator.user().get_context_frame()])
 
     @pipecat_transport.event_handler("on_client_disconnected")
@@ -96,7 +91,7 @@ async def run_bot(pipecat_transport: BaseTransport):
     await runner.run(task)
 
 
-async def start_bot(webrtc_connection):
+async def start_bot(webrtc_connection, language_code: str = 'FR_FR'):
     """Main bot entry point for the bot starter."""
 
     transport = SmallWebRTCTransport(
@@ -109,4 +104,4 @@ async def start_bot(webrtc_connection):
         ),
     )
 
-    await run_bot(transport)
+    await run_bot(transport, language_code)

@@ -13,6 +13,7 @@ class WebRTCApp {
   private declare disconnectBtn: HTMLButtonElement;
   private declare muteBtn: HTMLButtonElement;
 
+  private declare languageSelect: HTMLSelectElement;
   private declare audioInput: HTMLSelectElement;
   private declare audioCodec: HTMLSelectElement;
 
@@ -37,8 +38,13 @@ class WebRTCApp {
   }
 
   private initializePipecatClient(): void {
+    this.initializePipecatClientWithLanguage();
+  }
+
+  private initializePipecatClientWithLanguage(language?: string): void {
+    const connectionUrl = language ? `/api/offer?language=${language}` : '/api/offer';
     const opts: PipecatClientOptions = {
-      transport: new SmallWebRTCTransport({ connectionUrl: '/api/offer' }),
+      transport: new SmallWebRTCTransport({ connectionUrl }),
       enableMic: true,
       enableCam: false,
       callbacks: {
@@ -96,6 +102,7 @@ class WebRTCApp {
     this.connectBtn = document.getElementById('connect-btn') as HTMLButtonElement;
     this.disconnectBtn = document.getElementById('disconnect-btn') as HTMLButtonElement;
     this.muteBtn = document.getElementById('mute-btn') as HTMLButtonElement;
+    this.languageSelect = document.getElementById('language-select') as HTMLSelectElement;
     this.audioInput = document.getElementById('audio-input') as HTMLSelectElement;
     this.audioCodec = document.getElementById('audio-codec') as HTMLSelectElement;
     this.audioElement = document.getElementById('bot-audio') as HTMLAudioElement;
@@ -265,12 +272,21 @@ class WebRTCApp {
   }
 
   private async start(): Promise<void> {
-    this.clearAllLogs();
+    const selectedLanguage = this.languageSelect.value;
+    if (!selectedLanguage) {
+      alert('Please select a target language before connecting.');
+      this.connectBtn.disabled = false;
+      return;
+    }
 
+    this.clearAllLogs();
     this.connectBtn.disabled = true;
     this.updateStatus('Connecting');
 
+    // Reinitialize client with language parameter
+    this.initializePipecatClientWithLanguage(selectedLanguage);
     this.smallWebRTCTransport.setAudioCodec(this.audioCodec.value);
+    
     try {
       await this.pcClient.connect();
     } catch (e) {
