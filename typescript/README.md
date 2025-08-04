@@ -19,13 +19,29 @@ npm install
 
 3. Run the client app:
 
-```
+```bash
 npm run dev
 ```
 
 5. Visit http://localhost:5173 in your browser.
 
----
+-----
+
+## Docker (Production)
+
+```bash
+# Build
+docker build -t wilbur-translator .
+
+# Run
+docker run -p 3000:80 wilbur-translator
+```
+
+Access: http://localhost:3000
+
+Backend proxy: nginx routes `/api` to `host.docker.internal:7860`
+
+-----
 
 ## HTTPS Setup (Optional)
 
@@ -123,6 +139,3 @@ npm run dev
 - ✅ WebRTC APIs work properly
 - ✅ Access from other devices on your network
 - ✅ All HTTPS-required web APIs function correctly
-
------
-
