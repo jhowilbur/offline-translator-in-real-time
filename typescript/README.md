@@ -34,7 +34,7 @@ npm run dev
 docker build -t wilbur-translator .
 
 # Run
-docker run -p 3000:80 wilbur-translator
+docker run --name wilbur_translator -p 3000:80 wilbur-translator 
 ```
 
 Access: http://localhost:3000
