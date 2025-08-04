@@ -27,22 +27,6 @@ npm run dev
 
 -----
 
-## Docker (Production)
-
-```bash
-# Build
-docker build -t wilbur-translator .
-
-# Run
-docker run -p 3000:80 wilbur-translator
-```
-
-Access: http://localhost:3000
-
-Backend proxy: nginx routes `/api` to `host.docker.internal:7860`
-
------
-
 ## HTTPS Setup (Optional)
 
 For WebRTC applications and secure contexts, you may want to run the development server with HTTPS. This is especially useful when:
@@ -139,3 +123,62 @@ npm run dev
 - ✅ WebRTC APIs work properly
 - ✅ Access from other devices on your network
 - ✅ All HTTPS-required web APIs function correctly
+
+-----
+
+## Docker (Production)
+
+### HTTP Only (Basic Setup)
+
+```bash
+# Build
+docker build -t wilbur-translator .
+
+# Run
+docker run --name wilbur-translator-container -p 5173:80 wilbur-translator
+```
+
+Access: http://localhost:5173
+
+
+### HTTPS Setup (For SSL-enabled backends)
+
+If your backend requires HTTPS connections, follow these steps:
+
+#### 1. Generate SSL Certificates (on Windows)
+
+```powershell
+# Install mkcert if not already installed
+winget install FiloSottile.mkcert
+
+# Install local Certificate Authority
+mkcert -install
+
+# Generate certificates (replace IPs with your actual Windows and Ubuntu server IPs)
+mkcert localhost 127.0.0.1 ::1 FRONTEND_IP BACKEND_IP
+```
+
+This creates:
+- `localhost+4.pem` (certificate)
+- `localhost+4-key.pem` (private key)
+
+#### 3. Build and Run with HTTPS
+
+```bash
+# Build the Docker image with HTTPS support
+sudo docker build -t wilbur-translator .
+
+# Run with both HTTP and HTTPS ports
+sudo docker run --name wilbur_translator -p 5173:80 -p 5174:443 wilbur-translator
+```
+
+#### 4. Access Your Application
+
+- **HTTP**: `http://your-server-ip:5173`
+- **HTTPS**: `https://your-server-ip:5174`
+
+### Network Configuration
+
+Backend proxy: nginx routes `/api` to your Windows machine IP (e.g., `192.168.00.00:7860`)
+
+**Note**: Update the IP address in `nginx.conf` to match your Windows machine's IP where the Python backend is running.
