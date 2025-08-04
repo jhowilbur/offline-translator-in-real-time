@@ -1,0 +1,448 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.app {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 12px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: rgba(255,255,255,0.9);
+    font-size: 14px;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ff4757;
+    transition: background 0.3s ease;
+}
+
+.status-indicator.connected {
+    background: #2ed573;
+}
+
+.main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.controls-card, .transcript-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+}
+
+.language-settings {
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.language-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.language-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.language-select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 15px;
+    background: white;
+    transition: all 0.2s ease;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    cursor: pointer;
+}
+
+.language-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.language-select:hover {
+    border-color: #9ca3af;
+}
+
+.language-select.required {
+    border-color: #f59e0b;
+}
+
+.language-select.required:focus {
+    border-color: #d97706;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.language-select:disabled,
+.language-select.disabled {
+    background-color: #f9fafb;
+    color: #9ca3af;
+    border-color: #e5e7eb;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.language-select:disabled:hover,
+.language-select.disabled:hover {
+    border-color: #e5e7eb;
+}
+
+.audio-settings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.select {
+    flex: 1 1 140px;
+    min-width: 140px;
+    padding: 12px 16px;
+    border: 2px solid #f1f3f4;
+    border-radius: 12px;
+    font-size: 14px;
+    background: white;
+    transition: border-color 0.2s ease;
+    outline: none;
+}
+
+.select:focus {
+    border-color: #667eea;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.btn {
+    flex: 1;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #5a6fd8;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #f1f3f4;
+    color: #666;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #e8eaed;
+    transform: translateY(-1px);
+}
+
+.btn-icon {
+    flex: 0 0 auto;
+    width: 48px;
+    height: 48px;
+    background: #2ed573;
+    color: white;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover:not(:disabled) {
+    background: #26d065;
+    transform: translateY(-1px);
+}
+
+.btn-icon.muted {
+    background: #ff4757;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.transcript-card {
+    flex: 1;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.transcript-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.transcript-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.debug-btn {
+    font-size: 12px;
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.debug-btn:hover {
+    background: #5a6fd8;
+    transform: translateY(-1px);
+}
+
+.debug-btn.active {
+    background: #ff9f43;
+}
+
+.clear-btn {
+    font-size: 12px;
+    color: #667eea;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.clear-btn:hover {
+    background: #f1f3f4;
+}
+
+.hidden {
+    display: none;
+}
+
+.listening-indicator {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    text-align: center;
+    animation: listeningPulse 1.5s ease-in-out infinite;
+}
+
+.listening-wave {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: white;
+}
+
+.listening-wave span {
+    font-size: 20px;
+    animation: micPulse 1s ease-in-out infinite;
+}
+
+.wave-text {
+    font-size: 16px;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+@keyframes listeningPulse {
+    0%, 100% { 
+        opacity: 0.8;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 1;
+        transform: scale(1.02);
+    }
+}
+
+@keyframes micPulse {
+    0%, 100% { 
+        transform: scale(1);
+    }
+    50% { 
+        transform: scale(1.2);
+    }
+}
+
+.btn-icon.listening {
+    animation: micButtonPulse 1s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(46, 213, 115, 0.5);
+}
+
+@keyframes micButtonPulse {
+    0%, 100% { 
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(46, 213, 115, 0.5);
+    }
+    50% { 
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(46, 213, 115, 0.8);
+    }
+}
+
+.transcript-content {
+    flex: 1;
+    overflow-y: auto;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+    scroll-behavior: smooth;
+}
+
+.transcript-content div {
+    padding: 12px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.transcript-content div:last-child {
+    border-bottom: none;
+}
+
+.debug-content {
+    flex: 1;
+    overflow-y: auto;
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #666;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 12px;
+    scroll-behavior: smooth;
+}
+
+.debug-content div {
+    padding: 4px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.debug-content div:last-child {
+    border-bottom: none;
+}
+
+.transcript-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.transcript-content::-webkit-scrollbar-track {
+    background: #f1f3f4;
+    border-radius: 2px;
+}
+
+.transcript-content::-webkit-scrollbar-thumb,
+.debug-content::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 2px;
+}
+
+.debug-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.debug-content::-webkit-scrollbar-track {
+    background: #f1f3f4;
+    border-radius: 2px;
+}
+
+@media (min-width: 768px) {
+    .app {
+        max-width: 600px;
+        padding: 40px;
+    }
+    
+    .transcript-card {
+        min-height: 500px;
+    }
+    
+    .language-settings {
+        flex-direction: row;
+        gap: 20px;
+    }
+    
+    .language-group {
+        flex: 1;
+    }
+}
+
+@media (max-width: 767px) {
+    .language-select {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}

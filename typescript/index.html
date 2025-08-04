@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wilbur AI - Idiom Interpreter & Translator</title>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1>Wilbur AI - Idiom Interpreter & Translator</h1>
+            <div class="status">
+                <div class="status-indicator"></div>
+                <span id="connection-status">Disconnected</span>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="controls-card">
+                <div class="language-settings">
+                    <div class="language-group">
+                        <label class="language-label">🗣️ I speak</label>
+                        <select id="source-language-select" class="language-select required">
+                            <option value="" selected>Choose your language</option>
+                            <option value="EN_US">🇺🇸 English</option>
+                            <option value="ES_ES">🇪🇸 Spanish</option>
+                            <option value="FR_FR">🇫🇷 French</option>
+                            <option value="DE_DE">🇩🇪 German</option>
+                            <option value="IT_IT">🇮🇹 Italian</option>
+                            <option value="PT_PT">🇵🇹 Portuguese</option>
+                            <option value="JA_JP">🇯🇵 Japanese</option>
+                            <option value="KO_KR">🇰🇷 Korean</option>
+                            <option value="ZH_CN">🇨🇳 Chinese</option>
+                            <option value="RU_RU">🇷🇺 Russian</option>
+                        </select>
+                    </div>
+                    <div class="language-group">
+                        <label class="language-label">🎯 Translate to</label>
+                        <select id="language-select" class="language-select required">
+                            <option value="" selected>Choose language</option>
+                            <option value="EN_US">🇺🇸 English</option>
+                            <option value="ES_ES">🇪🇸 Spanish</option>
+                            <option value="FR_FR">🇫🇷 French</option>
+                            <option value="DE_DE">🇩🇪 German</option>
+                            <option value="IT_IT">🇮🇹 Italian</option>
+                            <option value="PT_PT">🇵🇹 Portuguese</option>
+                            <option value="JA_JP">🇯🇵 Japanese</option>
+                            <option value="KO_KR">🇰🇷 Korean</option>
+                            <option value="ZH_CN">🇨🇳 Chinese</option>
+                            <option value="RU_RU">🇷🇺 Russian</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="audio-settings">
+                    <select id="audio-input" class="select">
+                        <option value="" selected>Default microphone</option>
+                    </select>
+                    <select id="audio-codec" class="select">
+                        <option value="default" selected>Auto codec</option>
+                        <option value="opus/48000/2">Opus</option>
+                        <option value="PCMU/8000">PCMU</option>
+                        <option value="PCMA/8000">PCMA</option>
+                    </select>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="connect-btn" class="btn btn-primary">Connect</button>
+                    <button id="disconnect-btn" class="btn btn-secondary" disabled>Disconnect</button>
+                    <button id="mute-btn" class="btn btn-icon">🎤</button>
+                </div>
+            </div>
+
+            <div class="transcript-card">
+                <div class="transcript-header">
+                    <h2>Conversation</h2>
+                    <div class="header-controls">
+                        <button id="debug-toggle" class="debug-btn">Debug</button>
+                        <div class="clear-btn" onclick="document.getElementById('transcript-log').innerHTML = ''; document.getElementById('debug-log').innerHTML = ''">Clear</div>
+                    </div>
+                </div>
+                <div id="listening-indicator" class="listening-indicator hidden">
+                    <div class="listening-wave">
+                        <span>🎤</span>
+                        <div class="wave-text">Listening...</div>
+                    </div>
+                </div>
+                <div id="transcript-log" class="transcript-content"></div>
+                <div id="debug-log" class="debug-content hidden"></div>
+            </div>
+        </main>
+
+        <audio id="bot-audio" autoplay></audio>
+    </div>
+
+    <script type="module" src="/src/app.ts"></script>
+    <link rel="stylesheet" href="/src/style.css">
+</body>
+</html>
