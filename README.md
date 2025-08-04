@@ -117,6 +117,28 @@ http://localhost:5173
 
 ---
 
+## 🐳 Docker Setup (GPU Enabled)
+
+For a containerized deployment with GPU support, you can use the provided Dockerfile and docker-compose configuration.
+
+### Prerequisites for Docker
+- Docker with GPU support (nvidia-container-toolkit)
+- NVIDIA GPU with CUDA support
+- Docker Compose v3.8+ (or v2.3+ for older syntax)
+
+### Manual Docker Build and Run
+```bash
+# Build the image
+docker build -t wilburai-backend .
+
+# Run with GPU support
+docker run --restart unless-stopped --gpus all -p 7860:7860 wilburai-backend
+```
+
+> **Note**: The Docker setup only runs the Python backend server. You'll still need to run the frontend separately using the instructions above, or access the backend API directly at `http://localhost:7860`
+
+---
+
 ### 💡 Notes
 - Ensure all dependencies are installed before running.
 
