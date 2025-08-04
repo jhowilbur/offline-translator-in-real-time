@@ -39,6 +39,8 @@ RUN venv/bin/pip install -r requirements.txt
 
 # Copy the application code
 COPY bot.py .
+COPY bot_service.py .
+COPY connection_manager.py .
 COPY server.py .
 
 # Expose the port that the server runs on

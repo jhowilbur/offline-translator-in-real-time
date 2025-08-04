@@ -7,72 +7,55 @@ from pipecat.pipeline.task import PipelineParams, PipelineTask
 from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
 from pipecat.transports.base_transport import TransportParams
 from pipecat.transports.network.small_webrtc import SmallWebRTCTransport
-from pipecat.services.ollama import OLLamaLLMService
 from pipecat.transcriptions.language import Language
-from pipecat.services.whisper.stt import WhisperSTTService, Model
 from pipecat.processors.frameworks.rtvi import RTVIConfig, RTVIObserver, RTVIProcessor
 from pipecat.transports.base_transport import BaseTransport, TransportParams
+from bot_service import BotService
 
 
 load_dotenv(override=True)
 
 async def run_bot(pipecat_transport: BaseTransport, target_language_code: str = 'FR_FR', source_language_code: str = 'EN_US'):
-    # Convert string to Language enum for target language
+    # Convert language codes to Language enums
     try:
-        languageToTranslate = getattr(Language, target_language_code)
+        target_language = getattr(Language, target_language_code)
     except AttributeError:
-        languageToTranslate = Language.FR_FR  # fallback
+        target_language = Language.FR_FR
 
-    # Convert string to Language enum for source language
     try:
         source_language = getattr(Language, source_language_code)
     except AttributeError:
-        source_language = Language.EN_US  # fallback to English
+        source_language = Language.EN_US
 
-    # Configure STT with source language
-    stt_params = {
-        "model": Model.LARGE_V3_TURBO,
-        "device": "cuda",
-        "compute_type": "float16",  # Reduce memory usage
-        "no_speech_prob": 0.3,      # Lower threshold for speech detection
-        "language": source_language
-    }
+    logger.info(f"Creating dedicated services for client - STT: {source_language}, Target: {target_language}")
     
-    stt = WhisperSTTService(**stt_params)
+    # Create dedicated services for this client
+    stt = BotService.create_stt_service(source_language)
+    llm = BotService.create_llm_service()
+    
+    logger.info("Client services created successfully")
 
-    llm = OLLamaLLMService(
-        model="gemma3n:e2b",
-        base_url="http://localhost:11434/v1",
-        params=OLLamaLLMService.InputParams(
-            temperature=0.7,
-            max_tokens=1000
-        ),
-    )
-
+    # Create client-specific context
     messages = [
         {
             "role": "system",
-            "content": f"You're an expert Idiom Interpreter & Translator. Your job is to translate idioms and figurative expressions into {languageToTranslate}, preserving their cultural and emotional meaning. Always give the translation directly, without extra explanation or commentary.",
+            "content": BotService.get_system_message(target_language),
         },
     ]
 
     context = OpenAILLMContext(messages)
     context_aggregator = llm.create_context_aggregator(context)
-
     rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
 
-    pipeline = Pipeline(
-        [
-            pipecat_transport.input(),  # Transport user input
-            rtvi,  # RTVI processor
-            stt,
-            context_aggregator.user(),  # User responses
-            llm,  # LLM
-            # tts,  # TTS
-            pipecat_transport.output(),  # Transport bot output
-            context_aggregator.assistant(),  # Assistant spoken responses
-        ]
-    )
+    pipeline = Pipeline([
+        pipecat_transport.input(),
+        rtvi,
+        stt,
+        context_aggregator.user(),
+        llm,
+        pipecat_transport.output(),
+        context_aggregator.assistant(),
+    ])
 
     task = PipelineTask(
         pipeline,
@@ -85,18 +68,21 @@ async def run_bot(pipecat_transport: BaseTransport, target_language_code: str = 
 
     @pipecat_transport.event_handler("on_client_connected")
     async def on_client_connected(transport, client):
-        logger.info("Client connected")
-        # Kick off the conversation.
-        messages.append({"role": "system", "content": f"Say in {languageToTranslate}: Hello! I'm an AI, Idiom Interpreter & Translator, a new version of AI that can help you precisely interpret idiomatic expressions and translate them into another specified language, while preserving cultural, emotional, and contextual meaning."})
+        logger.info(f"Client connected - preparing welcome message in {target_language}")
+        welcome_message = BotService.get_welcome_message(target_language)
+        messages.append({
+            "role": "system", 
+            "content": welcome_message
+        })
+        logger.info(f"Sending welcome message: {welcome_message[:100]}...")
         await task.queue_frames([context_aggregator.user().get_context_frame()])
 
     @pipecat_transport.event_handler("on_client_disconnected")
     async def on_client_disconnected(transport, client):
-        logger.info("Client disconnected")
-        await task.cancel()
+        logger.info("Client disconnected from transport")
+        # Task cleanup is handled by ConnectionManager
 
     runner = PipelineRunner(handle_sigint=False)
-
     await runner.run(task)
 
 

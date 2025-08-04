@@ -2,19 +2,18 @@ import argparse
 import asyncio
 import sys
 from contextlib import asynccontextmanager
-from typing import Dict
 
 import uvicorn
 from bot import start_bot
+from bot_service import BotService
+from connection_manager import ConnectionManager
 from fastapi import BackgroundTasks, FastAPI, Request
 from loguru import logger
 from pipecat.transports.network.webrtc_connection import IceServer, SmallWebRTCConnection
 
 
-app = FastAPI()
-
-# Store connections by pc_id
-pcs_map: Dict[str, SmallWebRTCConnection] = {}
+# Global connection manager
+connection_manager = ConnectionManager()
 
 ice_servers = [
     IceServer(
@@ -23,38 +22,61 @@ ice_servers = [
 ]
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Start connection cleanup task
+    logger.info("Starting connection management")
+    await connection_manager.start_cleanup_task()
+    
+    yield  # Run app
+    
+    # Cleanup
+    logger.info("Shutting down services")
+    await connection_manager.shutdown()
+
+
+app = FastAPI(lifespan=lifespan)
+
+
 @app.post("/api/offer")
 async def offer(request: dict, background_tasks: BackgroundTasks, req: Request):
     pc_id = request.get("pc_id")
+    
+    try:
+        if pc_id:
+            existing_connection = await connection_manager.get_connection(pc_id)
+            if existing_connection:
+                logger.info(f"Reusing connection for client {pc_id}")
+                await existing_connection.renegotiate(
+                    sdp=request["sdp"],
+                    type=request["type"],
+                    restart_pc=request.get("restart_pc", False),
+                )
+                return existing_connection.get_answer()
 
-    if pc_id and pc_id in pcs_map:
-        pipecat_connection = pcs_map[pc_id]
-        logger.info(f"Reusing existing connection for pc_id: {pc_id}")
-        await pipecat_connection.renegotiate(
-                sdp=request["sdp"],
-                type=request["type"],
-                restart_pc=request.get("restart_pc", False),
-        )
-    else:
+        # Create new connection
         pipecat_connection = SmallWebRTCConnection(ice_servers)
         await pipecat_connection.initialize(sdp=request["sdp"], type=request["type"])
 
-        @pipecat_connection.event_handler("closed")
-        async def handle_disconnected(webrtc_connection: SmallWebRTCConnection):
-            logger.info(f"Discarding peer connection for pc_id: {webrtc_connection.pc_id}")
-            pcs_map.pop(webrtc_connection.pc_id, None)
-
         target_language = req.query_params.get('language', 'FR_FR')
         source_language = req.query_params.get('sourceLanguage', 'EN_US')
-        background_tasks.add_task(start_bot, pipecat_connection, target_language, source_language)
-        # runner_args = SmallWebRTCRunnerArguments(webrtc_connection=pipecat_connection)
-        # background_tasks.add_task(start_bot, runner_args)
-
-    answer = pipecat_connection.get_answer()
-    # Updating the peer connection inside the map
-    pcs_map[answer["pc_id"]] = pipecat_connection
-
-    return answer
+        
+        # Create bot task
+        bot_task = asyncio.create_task(
+            start_bot(pipecat_connection, target_language, source_language)
+        )
+        
+        # Add to connection manager (this will set up disconnect handlers)
+        await connection_manager.add_connection(pipecat_connection, bot_task)
+        
+        answer = pipecat_connection.get_answer()
+        logger.info(f"New connection established for client {answer['pc_id']} ({target_language}<-{source_language})")
+        
+        return answer
+        
+    except Exception as e:
+        logger.error(f"Error handling offer: {e}")
+        raise
 
 
 @app.get("/")
@@ -62,12 +84,11 @@ async def serve_index():
     return {"message": "Welcome to Wilbur AI - Idiom Interpreter & Translator", "status": "running"}
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    yield  # Run app
-    coros = [pc.disconnect() for pc in pcs_map.values()]
-    await asyncio.gather(*coros)
-    pcs_map.clear()
+@app.get("/api/status")
+async def get_status():
+    status = connection_manager.get_status()
+    status["status"] = "running"
+    return status
 
 
 if __name__ == "__main__":
